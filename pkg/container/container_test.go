@@ -303,6 +303,39 @@ var _ = Describe("the container", func() {
 			})
 		})
 
+		When("checking the no-notify label", func() {
+			When("no-notify label is true", func() {
+				c := MockContainer(WithLabels(map[string]string{
+					"com.centurylinklabs.watchtower.no-notify": "true",
+				}))
+				It("should return true", func() {
+					Expect(c.NoNotify()).To(Equal(true))
+				})
+			})
+			When("no-notify label is false", func() {
+				c := MockContainer(WithLabels(map[string]string{
+					"com.centurylinklabs.watchtower.no-notify": "false",
+				}))
+				It("should return false", func() {
+					Expect(c.NoNotify()).To(Equal(false))
+				})
+			})
+			When("no-notify label is set to an invalid value", func() {
+				c := MockContainer(WithLabels(map[string]string{
+					"com.centurylinklabs.watchtower.no-notify": "maybe",
+				}))
+				It("should return false", func() {
+					Expect(c.NoNotify()).To(Equal(false))
+				})
+			})
+			When("no-notify label is unset", func() {
+				c := MockContainer(WithLabels(map[string]string{}))
+				It("should return false", func() {
+					Expect(c.NoNotify()).To(Equal(false))
+				})
+			})
+		})
+
 		When("checking no-pull label", func() {
 			When("no-pull argument is not set", func() {
 				When("no-pull label is true", func() {

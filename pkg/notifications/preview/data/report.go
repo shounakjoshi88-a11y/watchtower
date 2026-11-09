@@ -70,6 +70,13 @@ func (r *report) Fresh() []types.ContainerReport {
 	return r.fresh
 }
 
+// AllUpdatedNoNotify reports whether every container that was updated in this
+// session carried the no-notify label while nothing failed or was skipped.
+// Previews always deliver their notification, so this stays false.
+func (r *report) AllUpdatedNoNotify() bool {
+	return false
+}
+
 func (r *report) All() []types.ContainerReport {
 	allLen := len(r.scanned) + len(r.updated) + len(r.failed) + len(r.skipped) + len(r.stale) + len(r.fresh)
 	all := make([]types.ContainerReport, 0, allLen)

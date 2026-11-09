@@ -53,6 +53,7 @@ type Container interface {
 	ImageName() string
 	Enabled() (bool, bool)
 	IsMonitorOnly(UpdateParams) bool
+	NoNotify() bool
 	Scope() (string, bool)
 	Links() []string
 	ToRestart() bool

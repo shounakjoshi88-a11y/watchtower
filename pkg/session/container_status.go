@@ -24,6 +24,7 @@ type ContainerStatus struct {
 	newImage      wt.ImageID
 	containerName string
 	imageName     string
+	noNotify      bool
 	error
 	state State
 }
@@ -59,6 +60,12 @@ func (u *ContainerStatus) Error() string {
 		return ""
 	}
 	return u.error.Error()
+}
+
+// NoNotify returns whether update notifications about this container should
+// be suppressed when it is the only container updated in a session
+func (u *ContainerStatus) NoNotify() bool {
+	return u.noNotify
 }
 
 // State returns the current State that the container is in

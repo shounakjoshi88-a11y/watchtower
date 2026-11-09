@@ -143,6 +143,22 @@ func (c Container) IsNoPull(params wt.UpdateParams) bool {
 	return c.getContainerOrGlobalBool(params.NoPull, noPullLabel, params.LabelPrecedence)
 }
 
+// NoNotify returns whether update notifications about this container should be
+// suppressed when it is the only container updated in a session. Containers
+// without the label, or with an unparseable label value, are not suppressed.
+func (c Container) NoNotify() bool {
+	val, ok := c.getLabelValue(noNotifyLabel)
+	if !ok {
+		return false
+	}
+	parsed, err := strconv.ParseBool(val)
+	if err != nil {
+		logrus.WithField("error", err).WithField("label", noNotifyLabel).Warn("Failed to parse label value")
+		return false
+	}
+	return parsed
+}
+
 func (c Container) getContainerOrGlobalBool(globalVal bool, label string, contPrecedence bool) bool {
 	if contVal, err := c.getBoolLabelValue(label); err != nil {
 		if !errors.Is(err, errorLabelNotFound) {

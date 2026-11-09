@@ -79,3 +79,23 @@ docker run -d --label=com.centurylinklabs.watchtower.monitor-only=true someimage
 ```
 
 When the label is specified on a container, watchtower treats that container exactly as if [`WATCHTOWER_MONITOR_ONLY`](https://watchtower.devcdn.net/arguments/#without_updating_containers) was set, but the effect is limited to the individual container.
+
+## No Notifications
+
+Individual containers can be updated as usual while keeping their updates out of the notification stream.
+
+To do so, set the *com.centurylinklabs.watchtower.no-notify* label to `true` on that container.
+
+```docker
+LABEL com.centurylinklabs.watchtower.no-notify="true"
+```
+
+Or, it can be specified as part of the `docker run` command line:
+
+```bash
+docker run -d --label=com.centurylinklabs.watchtower.no-notify=true someimage
+```
+
+When a session updates only containers carrying this label - and nothing fails or is skipped - the notification for that session is skipped entirely. As soon as one container without the label is updated, or any update fails, notifications behave as normal again.
+
+Users of the `json.v1` notification template should be aware that a suppressed session does not deliver a report, since the notification itself is not sent.

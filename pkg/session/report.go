@@ -7,12 +7,13 @@ import (
 )
 
 type report struct {
-	scanned []types.ContainerReport
-	updated []types.ContainerReport
-	failed  []types.ContainerReport
-	skipped []types.ContainerReport
-	stale   []types.ContainerReport
-	fresh   []types.ContainerReport
+	scanned            []types.ContainerReport
+	updated            []types.ContainerReport
+	failed             []types.ContainerReport
+	skipped            []types.ContainerReport
+	stale              []types.ContainerReport
+	fresh              []types.ContainerReport
+	allUpdatedNoNotify bool
 }
 
 func (r *report) Scanned() []types.ContainerReport {
@@ -32,6 +33,12 @@ func (r *report) Stale() []types.ContainerReport {
 }
 func (r *report) Fresh() []types.ContainerReport {
 	return r.fresh
+}
+
+// AllUpdatedNoNotify reports whether every container that was updated in this
+// session carried the no-notify label while nothing failed or was skipped
+func (r *report) AllUpdatedNoNotify() bool {
+	return r.allUpdatedNoNotify
 }
 func (r *report) All() []types.ContainerReport {
 	allLen := len(r.scanned) + len(r.updated) + len(r.failed) + len(r.skipped) + len(r.stale) + len(r.fresh)
@@ -72,9 +79,14 @@ func NewReport(progress Progress) types.Report {
 		fresh:   []types.ContainerReport{},
 	}
 
+	allUpdatedNoNotify := true
+	hasUpdated := false
+	anyBlocking := false
+
 	for _, update := range progress {
 		if update.state == SkippedState {
 			report.skipped = append(report.skipped, update)
+			anyBlocking = true
 			continue
 		}
 
@@ -88,13 +100,20 @@ func NewReport(progress Progress) types.Report {
 		switch update.state {
 		case UpdatedState:
 			report.updated = append(report.updated, update)
+			hasUpdated = true
+			if !update.noNotify {
+				allUpdatedNoNotify = false
+			}
 		case FailedState:
 			report.failed = append(report.failed, update)
+			anyBlocking = true
 		default:
 			update.state = StaleState
 			report.stale = append(report.stale, update)
 		}
 	}
+
+	report.allUpdatedNoNotify = hasUpdated && !anyBlocking && allUpdatedNoNotify
 
 	sort.Sort(sortableContainers(report.scanned))
 	sort.Sort(sortableContainers(report.updated))

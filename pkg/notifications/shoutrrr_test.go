@@ -6,6 +6,7 @@ import (
 	"github.com/beatkind/watchtower/internal/actions/mocks"
 	"github.com/beatkind/watchtower/internal/flags"
 	s "github.com/beatkind/watchtower/pkg/session"
+	wt "github.com/beatkind/watchtower/pkg/types"
 	"github.com/containrrr/shoutrrr/pkg/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -307,6 +308,31 @@ Turns out everything is on fire
 
 		})
 
+		It("skips the notification when every updated container has the no-notify label", func() {
+			router := &blockingRouter{unlock: make(chan bool, 1), sent: make(chan bool, 1)}
+			shoutrrr, err := sentrylessNotifier("", false, router)
+			Expect(err).NotTo(HaveOccurred())
+			go sendNotifications(shoutrrr)
+
+			shoutrrr.SendNotification(wtFakeReport{updated: []wt.ContainerReport{wtFakeContainerReport{}}, quiet: true})
+			shoutrrr.Close()
+
+			Eventually(router.sent).Should(Not(Receive()))
+		})
+
+		It("keeps sending when any updated container lacks the no-notify label", func() {
+			router := &blockingRouter{unlock: make(chan bool, 1), sent: make(chan bool, 1)}
+			shoutrrr, err := sentrylessNotifier("", false, router)
+			Expect(err).NotTo(HaveOccurred())
+			go sendNotifications(shoutrrr)
+
+			shoutrrr.SendNotification(wtFakeReport{updated: []wt.ContainerReport{wtFakeContainerReport{}}, quiet: false})
+			router.unlock <- true
+			shoutrrr.Close()
+
+			Eventually(router.sent).Should(Receive(BeTrue()))
+		})
+
 		It("SlowNotificationSent", func() {
 			shoutrrr, blockingRouter := sendNotificationsWithBlockingRouter(true)
 
@@ -379,3 +405,41 @@ func getTemplatedResult(tplString string, legacy bool, data Data) (msg string) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	return msg
 }
+
+func sentrylessNotifier(tplString string, legacy bool, router router) (*shoutrrrTypeNotifier, error) {
+	tpl, err := getShoutrrrTemplate(tplString, legacy)
+	if err != nil {
+		return nil, err
+	}
+	return &shoutrrrTypeNotifier{
+		template: tpl,
+		messages: make(chan string, 1),
+		done:     make(chan bool),
+		Router:   router,
+		params:   &types.Params{},
+	}, nil
+}
+
+type wtFakeContainerReport struct{}
+
+func (wtFakeContainerReport) ID() wt.ContainerID         { return wt.ContainerID("01d110000000") }
+func (wtFakeContainerReport) Name() string               { return "updt1" }
+func (wtFakeContainerReport) CurrentImageID() wt.ImageID { return wt.ImageID("01d110000000") }
+func (wtFakeContainerReport) LatestImageID() wt.ImageID  { return wt.ImageID("d0a110000000") }
+func (wtFakeContainerReport) ImageName() string          { return "mock/updt1:latest" }
+func (wtFakeContainerReport) Error() string              { return "" }
+func (wtFakeContainerReport) State() string              { return "Updated" }
+
+type wtFakeReport struct {
+	updated []wt.ContainerReport
+	quiet   bool
+}
+
+func (r wtFakeReport) Scanned() []wt.ContainerReport { return r.updated }
+func (r wtFakeReport) Updated() []wt.ContainerReport { return r.updated }
+func (r wtFakeReport) Failed() []wt.ContainerReport  { return nil }
+func (r wtFakeReport) Skipped() []wt.ContainerReport { return nil }
+func (r wtFakeReport) Stale() []wt.ContainerReport   { return nil }
+func (r wtFakeReport) Fresh() []wt.ContainerReport   { return nil }
+func (r wtFakeReport) All() []wt.ContainerReport     { return r.updated }
+func (r wtFakeReport) AllUpdatedNoNotify() bool      { return r.quiet }

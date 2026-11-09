@@ -172,6 +172,13 @@ func (n *shoutrrrTypeNotifier) StartNotification() {
 
 // SendNotification sends the queued up messages as a notification
 func (n *shoutrrrTypeNotifier) SendNotification(report t.Report) {
+	if report != nil && report.AllUpdatedNoNotify() {
+		// Every updated container opted out of notifications and nothing
+		// failed or was skipped: deliver nothing for this session.
+		n.entries = nil
+		LocalLog.Info("Skipping notification: every updated container has the no-notify label")
+		return
+	}
 	n.sendEntries(n.entries, report)
 	n.entries = nil
 }

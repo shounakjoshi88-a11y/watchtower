@@ -8,6 +8,7 @@ const (
 	enableLabel            = "com.centurylinklabs.watchtower.enable"
 	monitorOnlyLabel       = "com.centurylinklabs.watchtower.monitor-only"
 	noPullLabel            = "com.centurylinklabs.watchtower.no-pull"
+	noNotifyLabel          = "com.centurylinklabs.watchtower.no-notify"
 	dependsOnLabel         = "com.centurylinklabs.watchtower.depends-on"
 	zodiacLabel            = "com.centurylinklabs.zodiac.original-image"
 	scope                  = "com.centurylinklabs.watchtower.scope"

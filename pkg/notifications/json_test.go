@@ -21,6 +21,7 @@ var _ = Describe("JSON template", func() {
 		],
 		"host": "Mock",
 		"report": {
+		"allUpdatedNoNotify": false,
 		"failed": [
 			{
 				"currentImageId": "01d210000000",

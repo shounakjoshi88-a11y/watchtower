@@ -15,6 +15,7 @@ func UpdateFromContainer(cont types.Container, newImage types.ImageID, state Sta
 		imageName:     cont.ImageName(),
 		oldImage:      cont.SafeImageID(),
 		newImage:      newImage,
+		noNotify:      cont.NoNotify(),
 		state:         state,
 	}
 }
