@@ -100,5 +100,24 @@ var _ = Describe("the session report", func() {
 		It("is false when no containers were updated", func() {
 			Expect(newProgress().Report().AllUpdatedNoNotify()).To(BeFalse())
 		})
+
+		It("reports the flag per updated container", func() {
+			m := newProgress()
+			scanned(m, "updt1", true)
+			scanned(m, "updt2", false)
+
+			updated := m.Report().Updated()
+			Expect(updated).To(HaveLen(2))
+
+			notify := map[string]bool{}
+			for _, report := range updated {
+				status, ok := report.(*session.ContainerStatus)
+				Expect(ok).To(BeTrue())
+				notify[status.Name()] = status.NoNotify()
+			}
+
+			Expect(notify["updt1"]).To(BeTrue())
+			Expect(notify["updt2"]).To(BeFalse())
+		})
 	})
 })
